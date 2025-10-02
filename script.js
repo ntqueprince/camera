@@ -44,17 +44,6 @@ document.addEventListener("paste", function (event) {
       let selectedFile = null;
       let selectedFiles = [];
       let hasCalculated = false;
-// ✅ Camera se photo capture aur upload
-document.getElementById("cameraUpload").addEventListener("change", function(event) {
-  const file = event.target.files[0];
-  if (file) {
-    const tagInput = document.getElementById("tagInput");
-    const tag = tagInput.value.trim() || "CameraPhoto";
-    const progressBar = document.getElementById("progress");
-    const statusText = document.getElementById("status");
-    uploadFile(file, tag, progressBar, statusText);
-  }
-});
 
       // Expose functions to window object
   // Multiple Image Upload Function
@@ -132,33 +121,75 @@ document.getElementById("cameraUpload").addEventListener("change", function(even
     selectedFile = null; // reset
   }
       };
+function uploadFile(file, tag, progressBar, statusText) {
+  const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+  const formData = new FormData();
 
-      function uploadFile(file, tag, progressBar, statusText) {
-    const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
-    formData.append('tags', tag);
+  // ✅ Compress before upload
+  function compressImage(file, maxWidth = 1280, maxHeight = 1280, quality = 0.7, callback) {
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      const img = new Image();
+      img.onload = function () {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob.size > 400 * 1024) {
+              canvas.toBlob(callback, "image/jpeg", 0.5); // force smaller
+            } else {
+              callback(blob);
+            }
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ✅ Compress karne ke baad upload
+  compressImage(file, 1280, 1280, 0.7, (compressedBlob) => {
+    formData.append("file", compressedBlob, file.name);
+    formData.append("upload_preset", uploadPreset);
+    formData.append("tags", tag);
 
     const xhr = new XMLHttpRequest();
 
-    // Progress bar update for each file
     xhr.upload.onprogress = function (event) {
       if (event.lengthComputable) {
         const percentComplete = Math.round((event.loaded / event.total) * 100);
-        progressBar.style.width = percentComplete + '%';
-        progressBar.textContent = percentComplete + '%';
-        statusText.textContent = 'Uploading...';
+        progressBar.style.width = percentComplete + "%";
+        progressBar.textContent = percentComplete + "%";
+        statusText.textContent = "Uploading...";
       }
     };
 
-    // Upload complete
     xhr.onload = function () {
       if (xhr.status === 200) {
         const data = JSON.parse(xhr.responseText);
         if (!data.secure_url) {
-          showMessage('Upload failed: No secure URL received', 'error');
-          statusText.textContent = 'Upload failed!';
+          showMessage("Upload failed: No secure URL received", "error");
+          statusText.textContent = "Upload failed!";
           return;
         }
 
@@ -166,41 +197,41 @@ document.getElementById("cameraUpload").addEventListener("change", function(even
           url: data.secure_url,
           tag: tag,
           name: file.name,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
 
-        // Save into Firebase
         push(imagesRef, imgObj)
           .then(() => {
-            progressBar.style.width = '100%';
-            progressBar.textContent = '100%';
-            statusText.textContent = 'Complete';
-            showMessage(`${file.name} uploaded successfully!`, 'info');
-            document.getElementById('fileUpload').value = '';
-            document.getElementById('tagInput').value = '';
+            progressBar.style.width = "100%";
+            progressBar.textContent = "100%";
+            statusText.textContent = "Complete";
+            showMessage(`${file.name} uploaded successfully!`, "info");
+            document.getElementById("fileUpload").value = "";
+            document.getElementById("tagInput").value = "";
             loadImages();
           })
           .catch((error) => {
             console.error("Firebase Push Error:", error);
-            statusText.textContent = 'Upload failed: Firebase error';
-            showMessage('Upload failed: Firebase error', 'error');
+            statusText.textContent = "Upload failed: Firebase error";
+            showMessage("Upload failed: Firebase error", "error");
           });
       } else {
         console.error("Cloudinary Upload Failed:", xhr.status, xhr.responseText);
-        statusText.textContent = 'Upload failed!';
-        showMessage('Upload failed!', 'error');
+        statusText.textContent = "Upload failed!";
+        showMessage("Upload failed!", "error");
       }
     };
 
     xhr.onerror = function () {
       console.error("Upload error occurred:", xhr.status);
-      statusText.textContent = 'Upload error!';
-      showMessage('Upload failed due to network error!', 'error');
+      statusText.textContent = "Upload error!";
+      showMessage("Upload failed due to network error!", "error");
     };
 
-    xhr.open('POST', url, true);
+    xhr.open("POST", url, true);
     xhr.send(formData);
-  }
+  });
+}
 
       // Custom message box function (instead of alert)
       function showMessage(message, type = "info") {
