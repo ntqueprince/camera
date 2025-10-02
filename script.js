@@ -232,6 +232,34 @@ function uploadFile(file, tag, progressBar, statusText) {
     xhr.send(formData);
   });
 }
+// 📂 Gallery upload
+document.getElementById("galleryUpload").addEventListener("change", function(event) {
+  const files = event.target.files;
+  if (files.length > 0) {
+    const tagInput = document.getElementById("tagInput");
+    const tag = tagInput.value.trim() || "GalleryPhoto";
+    const progressBar = document.getElementById("progress");
+    const statusText = document.getElementById("status");
+
+    Array.from(files).forEach(file => {
+      uploadFile(file, tag, progressBar, statusText);
+    });
+  }
+});
+
+// 📷 Camera upload
+document.getElementById("cameraUpload").addEventListener("change", function(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const tagInput = document.getElementById("tagInput");
+    const tag = tagInput.value.trim() || "CameraPhoto";
+    const progressBar = document.getElementById("progress");
+    const statusText = document.getElementById("status");
+
+    uploadFile(file, tag, progressBar, statusText);
+  }
+});
+
 
       // Custom message box function (instead of alert)
       function showMessage(message, type = "info") {
