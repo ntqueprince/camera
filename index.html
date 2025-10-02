@@ -42,14 +42,15 @@
 <div class="upload-section">
   <h2>Upload Images</h2>
 
-  <!-- ✅ Single input: Camera + Gallery dono option ek popup me -->
-  <label for="fileUpload">📂 Choose Image (Camera or Gallery):</label><br>
-<label for="fileUpload">📂 Choose Image (Camera or Gallery):</label><br>
-<input accept="image/*" id="fileUpload" type="file" multiple capture="environment" />
-  <!-- Tag input -->
-  <input id="tagInput" placeholder="Enter tag (e.g., SHIVANG)" type="text"/>
+  <!-- 📂 Gallery -->
+  <label for="galleryUpload">📂 Choose from Gallery:</label><br>
+  <input accept="image/*" id="galleryUpload" type="file" multiple />
 
-  <!-- Upload button -->
+  <!-- 📷 Camera -->
+  <label for="cameraUpload">📷 Take a Photo:</label><br>
+  <input accept="image/*" id="cameraUpload" type="file" capture="environment" />
+
+  <input id="tagInput" placeholder="Enter tag (e.g., SHIVANG)" type="text"/>
   <button class="colorful-upload-btn" onclick="uploadImage()">Upload</button>
 
   <div class="progress-container">
