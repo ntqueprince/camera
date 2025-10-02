@@ -126,7 +126,7 @@ function uploadFile(file, tag, progressBar, statusText) {
   const formData = new FormData();
 
   // ✅ Compress before upload
-  function compressImage(file, maxWidth = 1280, maxHeight = 1280, quality = 0.7, callback) {
+function compressImage(file, maxWidth = 1280, maxHeight = 1280, quality = 0.85, callback) {
     const reader = new FileReader();
     reader.onload = function (event) {
       const img = new Image();
@@ -152,11 +152,15 @@ function uploadFile(file, tag, progressBar, statusText) {
 
         canvas.toBlob(
           (blob) => {
-            if (blob.size > 400 * 1024) {
-              canvas.toBlob(callback, "image/jpeg", 0.5); // force smaller
-            } else {
-              callback(blob);
-            }
+            if (blob.size > 500 * 1024) {
+  // if too large, compress more
+  canvas.toBlob(callback, "image/jpeg", 0.7);
+} else if (blob.size < 200 * 1024) {
+  // if too small, increase quality slightly
+  canvas.toBlob(callback, "image/jpeg", 0.9);
+} else {
+  callback(blob);
+}
           },
           "image/jpeg",
           quality
@@ -248,17 +252,26 @@ document.getElementById("galleryUpload").addEventListener("change", function(eve
 });
 
 // 📷 Camera upload
+// 📷 Camera upload (tag mandatory)
 document.getElementById("cameraUpload").addEventListener("change", function(event) {
   const file = event.target.files[0];
   if (file) {
     const tagInput = document.getElementById("tagInput");
-    const tag = tagInput.value.trim() || "CameraPhoto";
+    const tag = tagInput.value.trim();
+
+    if (!tag) {
+      alert("Please enter a tag before uploading!");
+      event.target.value = ""; // reset input
+      return;
+    }
+
     const progressBar = document.getElementById("progress");
     const statusText = document.getElementById("status");
 
     uploadFile(file, tag, progressBar, statusText);
   }
 });
+
 
 
       // Custom message box function (instead of alert)
